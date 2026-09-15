@@ -1,0 +1,56 @@
+# ============================================================
+# .gitignore — WebNotifier
+# ============================================================
+
+# ── Compiled Binaries ─────────────────────────────────────────
+build/
+*.o
+*.a
+*.so
+*.dylib
+scheduler_daemon
+report_generator
+test_scheduler
+
+# ── CMake artifacts ───────────────────────────────────────────
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+install_manifest.txt
+CTestTestfile.cmake
+_deps/
+
+# ── Secrets & Credentials (NEVER commit) ─────────────────────
+configs/.env
+*.env
+!configs/.env.example    # keep the template
+
+# ── Generated Reports (runtime output) ───────────────────────
+reports/*.pdf
+reports/*.csv
+reports/*.html
+logs/
+
+# ── OS / Editor artifacts ─────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# ── Dependency build artifacts ────────────────────────────────
+*.dSYM/
+*.pdb
+*.ilk
+*.exp
+*.lib
+
+# ── Test artifacts ────────────────────────────────────────────
+tests/output/
+*.gcov
+*.gcda
+*.gcno
+coverage/
