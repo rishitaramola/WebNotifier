@@ -7,6 +7,7 @@
 //   analogous to OS scheduling policies (FCFS, SJF, priority).
 // ============================================================
 #pragma once
+#include <functional>
 
 namespace webnotifier {
 
