@@ -14,7 +14,7 @@
 //   - std::filesystem for report directory management
 //   - Return codes communicated to cron via exit()
 // ============================================================
-#include "../analytics/include/analytics_engine.h"
+#include "../../analytics/include/analytics_engine.h"
 #include <iostream>
 #include <sstream>
 #include <chrono>
