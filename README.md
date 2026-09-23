@@ -93,15 +93,15 @@ weekly analytical reports.
 
 ## Development Roadmap
 
-  Week 1: DB Schema, API Contracts, Project Setup
-  Week 2: Queue + Scheduler Implementation
-  Week 3: Worker Pool + HTTP Checker
-  Week 4: Frontend Dashboard
-  Week 5: Analytics Engine + Reports
-  Week 6: Integration + Testing Upto week 5
-  Week 7: Alert Dispatcher + SMTP
-  Week 8: Final Integration + Final Testing
-  Week 9: Final Demo + Documentation
+- **Week 1:** DB Schema, API Contracts, Project Setup
+- **Week 2:** Queue + Scheduler Implementation
+- **Week 3:** Worker Pool + HTTP Checker
+- **Week 4:** Frontend Dashboard
+- **Week 5:** Analytics Engine + Reports
+- **Week 6:** Integration + Testing
+- **Week 7:** Alert Dispatcher + SMTP
+- **Week 8:** Final Integration + Final Testing
+- **Week 9:** Final Demo + Documentation
 
 ---
 
