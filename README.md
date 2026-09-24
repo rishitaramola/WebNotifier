@@ -13,6 +13,22 @@ weekly analytical reports.
 
 ---
 
+## Key Features
+
+- Automated website health monitoring
+- Multithreaded worker pool
+- Thread-safe task queue
+- Configurable monitoring intervals
+- HTTP status monitoring
+- Response-time / TTFB monitoring
+- PostgreSQL-based monitoring history
+- Dashboard and analytics
+- Email alerts
+- Weekly reports
+- System resource monitoring
+
+---
+
 ## Team Members
 
 | Member           | Role       | Module Ownership                   |
@@ -59,13 +75,45 @@ weekly analytical reports.
 
 ---
 
+### Worker Pool Configuration
+
+- Worker threads: 8
+- Task queue capacity: 1000
+- Thread-safe blocking queue
+- POSIX/C++ threads
+- Mutex and condition variables
+- Concurrent HTTP monitoring
+
+---
+
 ## Quick Start
 
-  1. Clone: git clone https://github.com/rishitaramola/WebNotifier.git
-  2. Config: cp configs/.env.example configs/.env
-  3. DB:     psql -U postgres -f database/schema/001_create_tables.sql
-  4. Build:  ./scripts/build.sh
-  5. Run:    ./scripts/run_backend.sh
+### 1. Clone the repository
+git clone https://github.com/rishitaramola/WebNotifier.git
+cd WebNotifier
+
+### 2. Configure environment
+cp configs/.env.example configs/.env
+
+### 3. Build C++ components
+cmake -B build -S . -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j
+
+### 4. Start PostgreSQL
+Make sure PostgreSQL is running and the WebNotifier database is configured.
+
+### 5. Start Backend API
+cd backend
+npm install
+node src/server.js
+
+### 6. Start Scheduler
+cd ../build
+./scheduler_daemon
+
+### 7. Start Frontend
+cd ../frontend
+python3 -m http.server 5500
 
 ---
 
@@ -88,6 +136,21 @@ weekly analytical reports.
   Views               -> database/views/
   Aggregation         -> analytics/
   Indexing            -> database/schema/002_create_indexes.sql
+
+---
+
+## Testing
+
+The project includes unit and integration-oriented tests for core scheduling
+and worker-pool functionality.
+
+### Scheduler Tests
+
+./build/test_scheduler
+
+### Worker Pool Test
+
+./build/test_worker_pool
 
 ---
 
@@ -274,19 +337,6 @@ crontab -l | grep webnotifier
 # Expected output:
 # 59 23 * * 0  set -a && source ".../configs/.env" && ... # webnotifier-report-generator
 ```
-
----
-
-### Run Unit Tests
-
-```bash
-./build/test_scheduler
-```
-
-Tests do **not** require a live database. All 16 tests run against in-memory
-strategy objects and intentionally broken connection strings to verify
-null-safety, divide-by-zero guards, and graceful empty-data handling.
-
 ---
 
 ### SQL Views Applied
