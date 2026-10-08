@@ -1,0 +1,773 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WebNotifier — Dashboard</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <!-- App Styles -->
+    <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════════════
+     LOGIN SCREEN
+     ════════════════════════════════════════════════════════════ -->
+<div id="login-screen" class="login-page" style="display:none;">
+    <div class="login-card">
+
+        <div class="login-logo">
+            <h1>⬡ WebNotifier</h1>
+            <p>Automated Website Monitoring Platform</p>
+        </div>
+
+        <div id="login-error" class="login-error"></div>
+
+        <form id="login-form">
+
+            <div class="form-group">
+                <label class="form-label" for="login-username">
+                    Username
+                </label>
+
+                <input
+                    class="form-input"
+                    id="login-username"
+                    name="username"
+                    type="text"
+                    placeholder="Enter your username"
+                    autocomplete="username"
+                    required
+                />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="login-password">
+                    Password
+                </label>
+
+                <input
+                    class="form-input"
+                    id="login-password"
+                    name="password"
+                    type="password"
+                    placeholder="Enter your password"
+                    autocomplete="current-password"
+                    required
+                />
+            </div>
+
+            <button
+                class="btn btn-primary"
+                type="submit"
+                style="width:100%;margin-top:4px;"
+            >
+                Sign In
+            </button>
+
+        </form>
+
+        <!-- Forgot Password -->
+        <div style="margin-top:12px;text-align:center;">
+            <button
+                type="button"
+                id="show-forgot"
+                style="background:none;border:none;color:#f39c12;cursor:pointer;font-size:0.78rem;padding:0;font-family:inherit;"
+            >
+                Forgot Password?
+            </button>
+        </div>
+
+        <!-- Create Account -->
+        <div
+            style="
+                margin-top:10px;
+                text-align:center;
+                font-size:0.78rem;
+                color:var(--text-muted);
+            "
+        >
+            Don't have an account?
+
+            <button
+                type="button"
+                id="show-register"
+                style="
+                    background:none;
+                    border:none;
+                    color:var(--accent);
+                    cursor:pointer;
+                    font:inherit;
+                    padding:0;
+                "
+            >
+                Create Account
+            </button>
+        </div>
+
+        <p
+            style="
+                margin-top:16px;
+                text-align:center;
+                font-size:0.78rem;
+                color:var(--text-muted);
+            "
+        >
+            Team CodeSync &mdash; PBL Project
+        </p>
+
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════
+     REGISTER SCREEN
+     ════════════════════════════════════════════════════════════ -->
+<div id="register-screen" class="login-page" style="display:none;">
+    <div class="login-card">
+
+        <div class="login-logo">
+            <h1>⬡ WebNotifier</h1>
+            <p>Create your account</p>
+        </div>
+
+        <div id="register-error" class="login-error"></div>
+
+        <div
+            id="register-success"
+            style="
+                display:none;
+                margin-bottom:16px;
+                padding:10px;
+                border-radius:6px;
+                text-align:center;
+                font-size:0.82rem;
+            "
+        ></div>
+
+        <form id="register-form">
+
+            <div class="form-group">
+                <label class="form-label" for="register-username">
+                    Username
+                </label>
+
+                <input
+                    class="form-input"
+                    id="register-username"
+                    name="username"
+                    type="text"
+                    placeholder="Choose a username"
+                    autocomplete="username"
+                    required
+                />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="register-email">
+                    Email
+                </label>
+
+                <input
+                    class="form-input"
+                    id="register-email"
+                    name="email"
+                    type="email"
+                    placeholder="Enter your email"
+                    autocomplete="email"
+                    required
+                />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="register-password">
+                    Password
+                </label>
+
+                <input
+                    class="form-input"
+                    id="register-password"
+                    name="password"
+                    type="password"
+                    placeholder="Create a password"
+                    autocomplete="new-password"
+                    required
+                />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="register-confirm-password">
+                    Confirm Password
+                </label>
+
+                <input
+                    class="form-input"
+                    id="register-confirm-password"
+                    name="confirmPassword"
+                    type="password"
+                    placeholder="Confirm your password"
+                    autocomplete="new-password"
+                    required
+                />
+            </div>
+
+            <button
+                class="btn btn-primary"
+                type="submit"
+                style="width:100%;margin-top:4px;"
+            >
+                Create Account
+            </button>
+
+        </form>
+
+        <div
+            style="
+                margin-top:16px;
+                text-align:center;
+                font-size:0.78rem;
+                color:#a8b3c7;
+            "
+        >
+            Already have an account?
+
+            <button
+                type="button"
+                id="show-login"
+                style="
+                    background:none;
+                    border:none;
+                    color:var(--accent);
+                    cursor:pointer;
+                    font:inherit;
+                    padding:0;
+                "
+            >
+                Sign In
+            </button>
+        </div>
+
+        <p
+            style="
+                margin-top:16px;
+                text-align:center;
+                font-size:0.78rem;
+                color:#a8b3c7;
+            "
+        >
+            Team CodeSync &mdash; PBL Project
+        </p>
+
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════
+     MAIN APP SHELL
+     ════════════════════════════════════════════════════════════ -->
+<div id="app-screen" class="app-shell" style="display:none;">
+
+    <!-- ── Topbar ───────────────────────────────────────────── -->
+    <header class="topbar">
+        <div class="topbar-brand">
+            <div class="logo-dot"></div>
+            WebNotifier
+        </div>
+        <div class="topbar-right">
+            <span class="topbar-user">👤 <span id="topbar-username">User</span></span>
+            <button class="btn-logout" id="btn-change-password" style="background:none;border:1px solid var(--border-color);color:var(--text-muted);margin-right:6px;padding:5px 12px;border-radius:6px;font-size:0.78rem;cursor:pointer;">🔑 Change Password</button>
+            <button class="btn-logout" id="btn-logout">Sign Out</button>
+        </div>
+    </header>
+
+    <!-- ── Sidebar Navigation ───────────────────────────────── -->
+    <nav class="sidebar">
+        <div class="nav-section-label">Monitor</div>
+        <div class="nav-item active" data-page="overview">
+            <span class="nav-icon">⬡</span> Overview
+        </div>
+        <div class="nav-item" data-page="websites">
+            <span class="nav-icon">🌐</span> Websites
+        </div>
+        <div class="nav-item" data-page="alerts">
+            <span class="nav-icon">🔔</span> Alerts
+        </div>
+
+        <div class="nav-section-label">Insights</div>
+        <div class="nav-item" data-page="analytics">
+            <span class="nav-icon">📊</span> Analytics
+        </div>
+        <div class="nav-item" data-page="system">
+            <span class="nav-icon">🖥</span> System Health
+        </div>
+    </nav>
+
+    <!-- ── Main Content ─────────────────────────────────────── -->
+    <main class="main-content">
+
+        <!-- ══ PAGE: Overview ═══════════════════════════════════ -->
+        <section id="page-overview" class="page active">
+            <div class="page-header">
+                <div>
+                    <div class="page-title">Overview</div>
+                    <div class="page-subtitle">Real-time monitoring status</div>
+                </div>
+                <button class="btn btn-primary"
+                        data-open-modal="modal-add-website">
+                    + Add Website
+                </button>
+            </div>
+
+            <!-- Stats bar -->
+            <div class="stats-bar">
+                <div class="stat-card">
+                    <div class="stat-label">Total Sites</div>
+                    <div class="stat-value blue" id="stat-total">—</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Sites Up</div>
+                    <div class="stat-value green" id="stat-up">—</div>
+                    <div class="stat-sub">Currently reachable</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Sites Down</div>
+                    <div class="stat-value red" id="stat-down">—</div>
+                    <div class="stat-sub">Need attention</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Avg Uptime (7d)</div>
+                    <div class="stat-value green" id="stat-uptime">—</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Alerts (24h)</div>
+                    <div class="stat-value yellow" id="stat-alerts">—</div>
+                </div>
+            </div>
+
+            <!-- Website cards (top 6) -->
+            <div class="section-title">🌐 Website Status</div>
+            <div id="website-cards" class="cards-grid"></div>
+
+            <!-- Charts row -->
+            <div class="chart-grid">
+                <div class="chart-box">
+                    <div class="chart-title">📈 7-Day Uptime %</div>
+                    <div id="uptime-bar-list" class="uptime-bar-list"></div>
+                </div>
+                <div class="chart-box">
+                    <div class="chart-title">🥧 Current Status Split</div>
+                    <div class="chart-wrapper">
+                        <canvas id="chart-status"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent alerts -->
+            <div class="section-box">
+                <div class="section-title">🔔 Recent Alerts</div>
+                <table class="alerts-table">
+                    <thead>
+                        <tr>
+                            <th>Site</th>
+                            <th>Type</th>
+                            <th>Message</th>
+                            <th>When</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="alerts-recent-table">
+                        <tr><td colspan="5" style="text-align:center;
+                            color:var(--text-muted);padding:20px">Loading…</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- System health mini widget -->
+            <div class="section-box">
+                <div class="section-title">🖥 Server Health</div>
+                <div class="health-grid">
+                    <div class="health-card">
+                        <div class="health-metric-name">CPU Usage</div>
+                        <div class="health-gauge" id="gauge-cpu"></div>
+                        <div class="health-label">System-wide CPU</div>
+                    </div>
+                    <div class="health-card">
+                        <div class="health-metric-name">Memory Usage</div>
+                        <div class="health-gauge" id="gauge-mem"></div>
+                        <div class="health-label">RAM utilization</div>
+                    </div>
+                    <div class="health-card">
+                        <div class="health-metric-name">Active Threads</div>
+                        <div style="font-size:2rem;font-weight:700;
+                                    color:var(--accent-blue);margin:12px 0"
+                             id="health-threads">—</div>
+                        <div class="health-label">Worker threads</div>
+                    </div>
+                    <div class="health-card">
+                        <div class="health-metric-name">Queue Depth</div>
+                        <div style="font-size:2rem;font-weight:700;
+                                    color:var(--accent-purple);margin:12px 0"
+                             id="health-queue">—</div>
+                        <div class="health-label">Pending tasks</div>
+                    </div>
+                </div>
+                <div style="margin-top:10px;font-size:0.75rem;color:var(--text-muted);text-align:right">
+                    Last updated: <span id="health-recorded">—</span>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ══ PAGE: Websites ════════════════════════════════════ -->
+        <section id="page-websites" class="page">
+            <div class="page-header">
+                <div>
+                    <div class="page-title">Websites</div>
+                    <div class="page-subtitle">All monitored URLs</div>
+                </div>
+                <button class="btn btn-primary"
+                        data-open-modal="modal-add-website">
+                    + Add Website
+                </button>
+            </div>
+            <div id="all-website-cards" class="cards-grid"></div>
+        </section>
+
+
+        <!-- ══ PAGE: Alerts ══════════════════════════════════════ -->
+        <section id="page-alerts" class="page">
+            <div class="page-header">
+                <div>
+                    <div class="page-title">Alerts</div>
+                    <div class="page-subtitle">All fired alerts</div>
+                </div>
+            </div>
+            <div class="section-box">
+                <table class="alerts-table">
+                    <thead>
+                        <tr>
+                            <th>Site</th>
+                            <th>Type</th>
+                            <th>Message</th>
+                            <th>When</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="alerts-full-table">
+                        <tr><td colspan="5" style="text-align:center;
+                            color:var(--text-muted);padding:20px">Loading…</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+
+        <!-- ══ PAGE: Analytics ═══════════════════════════════════ -->
+        <section id="page-analytics" class="page">
+            <div class="page-header">
+                <div>
+                    <div class="page-title">Analytics</div>
+                    <div class="page-subtitle">7-day performance trends</div>
+                </div>
+            </div>
+
+            <div class="chart-grid">
+                <div class="chart-box">
+                    <div class="chart-title">📈 Uptime % (Last 7 Days)</div>
+                    <div id="analytics-uptime-bar-list" class="uptime-bar-list"></div>
+                </div>
+                <div class="chart-box">
+                    <div class="chart-title">⚡ Avg Response Time (ms)</div>
+                    <div class="chart-wrapper">
+                        <canvas id="chart-response"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ══ PAGE: System Health ═══════════════════════════════ -->
+        <section id="page-system" class="page">
+            <div class="page-header">
+                <div>
+                    <div class="page-title">System Health</div>
+                    <div class="page-subtitle">
+                        OS resource monitor — powered by
+                        <code style="color:var(--accent-blue)">system_monitor_daemon</code>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gauges -->
+            <div class="section-box">
+                <div class="section-title">📡 Live Snapshot</div>
+                <div class="health-grid">
+                    <div class="health-card">
+                        <div class="health-metric-name">CPU Usage</div>
+                        <div class="health-gauge" id="gauge-cpu"></div>
+                        <div class="health-label">System CPU</div>
+                    </div>
+                    <div class="health-card">
+                        <div class="health-metric-name">Memory Usage</div>
+                        <div class="health-gauge" id="gauge-mem"></div>
+                        <div class="health-label">RAM</div>
+                    </div>
+                    <div class="health-card">
+                        <div class="health-metric-name">Active Threads</div>
+                        <div style="font-size:2rem;font-weight:700;
+                                    color:var(--accent-blue);margin:12px 0"
+                             id="health-threads">—</div>
+                        <div class="health-label">scheduler_daemon</div>
+                    </div>
+                    <div class="health-card">
+                        <div class="health-metric-name">Queue Depth</div>
+                        <div style="font-size:2rem;font-weight:700;
+                                    color:var(--accent-purple);margin:12px 0"
+                             id="health-queue">—</div>
+                        <div class="health-label">Pending jobs</div>
+                    </div>
+                </div>
+                <div style="margin-top:10px;font-size:0.75rem;
+                            color:var(--text-muted);text-align:right">
+                    Sampled: <span id="health-recorded">—</span>
+                </div>
+            </div>
+
+            <!-- CPU/RAM history chart -->
+            <div class="chart-box" style="margin-bottom:24px">
+                <div class="chart-title">📉 CPU &amp; RAM History (last 30 min)</div>
+                <div class="chart-wrapper" style="height:240px">
+                    <canvas id="chart-cpu"></canvas>
+                </div>
+            </div>
+
+            <!-- SSL warnings -->
+            <div class="section-box">
+                <div class="section-title">🔒 SSL Expiry Warnings</div>
+                <div id="ssl-warnings-list">
+                    <div class="empty-state">
+                        <div class="empty-icon">✅</div>
+                        <p>All SSL certificates are healthy.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main><!-- /main-content -->
+</div><!-- /app-screen -->
+
+
+<!-- ════════════════════════════════════════════════════════════
+     ADD WEBSITE MODAL
+     ════════════════════════════════════════════════════════════ -->
+<div id="modal-add-website" class="modal-overlay">
+    <div class="modal">
+        <div class="modal-header">
+            <div class="modal-title">Add Website</div>
+            <button class="modal-close" data-close-modal="modal-add-website"
+                    aria-label="Close">✕</button>
+        </div>
+
+        <form id="form-add-website" novalidate>
+            <div class="form-group">
+                <label class="form-label" for="add-url">URL *</label>
+                <input class="form-input" id="add-url" name="url"
+                       type="url" placeholder="https://example.com" required />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="add-name">Display Name *</label>
+                <input class="form-input" id="add-name" name="name"
+                       type="text" placeholder="My Website" required />
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label" for="add-interval">Check Every</label>
+                    <select class="form-select" id="add-interval"
+                            name="check_interval_min">
+                        <option value="1">1 minute</option>
+                        <option value="5" selected>5 minutes</option>
+                        <option value="10">10 minutes</option>
+                        <option value="15">15 minutes</option>
+                        <option value="30">30 minutes</option>
+                        <option value="60">1 hour</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="add-timeout">Timeout (s)</label>
+                    <input class="form-input" id="add-timeout" name="timeout_seconds"
+                           type="number" value="30" min="5" max="120" />
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="add-keyword">
+                    Keyword to Find <span style="color:var(--text-muted)">(optional)</span>
+                </label>
+                <input class="form-input" id="add-keyword" name="keyword"
+                       type="text" placeholder="e.g. Welcome" />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="add-email">Alert Email</label>
+                <input class="form-input" id="add-email" name="notify_email"
+                       type="email" placeholder="you@example.com" />
+            </div>
+
+            <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
+                <button type="button" class="btn btn-secondary"
+                        data-close-modal="modal-add-website">
+                    Cancel
+                </button>
+                <button type="submit" class="btn btn-primary">Add Website</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════════════
+     CHANGE PASSWORD MODAL
+     ════════════════════════════════════════════════════════════ -->
+<div id="modal-change-password" class="modal-overlay">
+    <div class="modal" style="max-width:420px;">
+        <div class="modal-header">
+            <div class="modal-title">&#x1F511; Change Password</div>
+            <button class="modal-close" data-close-modal="modal-change-password" aria-label="Close">&#x2715;</button>
+        </div>
+
+        <div id="change-pw-error" class="login-error"></div>
+        <div id="change-pw-success" style="display:none;margin-bottom:14px;padding:10px 14px;border-radius:6px;background:rgba(46,204,113,0.1);border:1px solid rgba(46,204,113,0.3);font-size:0.82rem;color:#2ecc71;"></div>
+
+        <form id="form-change-password">
+            <div class="form-group">
+                <label class="form-label" for="cp-new">New Password</label>
+                <input class="form-input" id="cp-new" type="password" placeholder="Enter new password (min 6 chars)" required />
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="cp-confirm">Confirm New Password</label>
+                <input class="form-input" id="cp-confirm" type="password" placeholder="Repeat new password" required />
+            </div>
+            <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
+                <button type="button" class="btn btn-secondary" data-close-modal="modal-change-password">Cancel</button>
+                <button type="submit" class="btn btn-primary">Update Password</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════════════
+     FORGOT PASSWORD SCREEN
+     ════════════════════════════════════════════════════════════ -->
+<div id="forgot-screen" class="login-page" style="display:none;">
+    <div class="login-card">
+        <div class="login-logo">
+            <h1>&#x2B21; WebNotifier</h1>
+            <p>Reset your password</p>
+        </div>
+
+        <div id="forgot-error" class="login-error"></div>
+
+        <div id="forgot-result" style="display:none;margin-bottom:16px;padding:14px 16px;border-radius:8px;background:rgba(46,204,113,0.08);border:1px solid rgba(46,204,113,0.25);font-size:0.82rem;line-height:1.6;color:var(--text-primary);"></div>
+
+        <form id="forgot-form">
+            <div class="form-group">
+                <label class="form-label" for="forgot-email">Registered Email</label>
+                <input class="form-input" id="forgot-email" name="email" type="email"
+                       placeholder="Enter your account email" autocomplete="email" required />
+            </div>
+            <button class="btn btn-primary" type="submit" style="width:100%;margin-top:4px;">
+                Reset Password
+            </button>
+        </form>
+
+        <div style="margin-top:16px;text-align:center;font-size:0.78rem;color:var(--text-muted);">
+            <button type="button" id="forgot-back-to-login"
+                style="background:none;border:none;color:var(--accent);cursor:pointer;font:inherit;padding:0;">
+                &larr; Back to Sign In
+            </button>
+        </div>
+
+        <p style="margin-top:16px;text-align:center;font-size:0.78rem;color:#a8b3c7;">
+            Team CodeSync &mdash; PBL Project
+        </p>
+    </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════════════
+     WEBSITE DETAILS MODAL
+     ════════════════════════════════════════════════════════════ -->
+<div id="modal-site-details" class="modal-overlay">
+    <div class="modal" style="max-width:780px;width:95vw;">
+        <div class="modal-header">
+            <div class="modal-title" id="details-modal-title">Website Details</div>
+            <button class="modal-close" data-close-modal="modal-site-details" aria-label="Close">&#x2715;</button>
+        </div>
+
+        <div id="details-status-banner" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:8px;margin-bottom:18px;background:rgba(46,204,113,0.08);border:1px solid rgba(46,204,113,0.2);">
+            <span id="details-status-badge" class="status-badge up"><span class="status-dot"></span>UP</span>
+            <div>
+                <div id="details-url" style="font-size:0.85rem;color:var(--accent-blue);word-break:break-all;"></div>
+                <div id="details-last-checked" style="font-size:0.73rem;color:var(--text-muted);margin-top:2px;"></div>
+            </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px;">
+            <div class="stat-card" style="padding:14px;text-align:center;">
+                <div class="stat-label">Uptime (7d)</div>
+                <div class="stat-value green" id="details-uptime" style="font-size:1.4rem;">&#8212;</div>
+            </div>
+            <div class="stat-card" style="padding:14px;text-align:center;">
+                <div class="stat-label">Avg Response</div>
+                <div class="stat-value blue" id="details-response" style="font-size:1.4rem;">&#8212;</div>
+            </div>
+            <div class="stat-card" style="padding:14px;text-align:center;">
+                <div class="stat-label">HTTP Code</div>
+                <div class="stat-value" id="details-http" style="font-size:1.4rem;">&#8212;</div>
+            </div>
+            <div class="stat-card" style="padding:14px;text-align:center;">
+                <div class="stat-label">SSL Expiry</div>
+                <div class="stat-value yellow" id="details-ssl" style="font-size:1.4rem;">&#8212;</div>
+            </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px;">
+            <div class="chart-box" style="padding:14px;">
+                <div class="chart-title" style="font-size:0.8rem;">Uptime vs Downtime (7d)</div>
+                <div class="chart-wrapper" style="height:180px;">
+                    <canvas id="details-doughnut-chart"></canvas>
+                </div>
+            </div>
+            <div class="chart-box" style="padding:14px;">
+                <div class="chart-title" style="font-size:0.8rem;">Alerts by Type</div>
+                <div class="chart-wrapper" style="height:180px;">
+                    <canvas id="details-alerts-chart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-box" style="padding:14px;">
+            <div class="section-title" style="font-size:0.8rem;margin-bottom:12px;">Monitoring Details</div>
+            <div id="details-stats-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px 24px;font-size:0.82rem;"></div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Toast Notifications -->
+<div id="toast-container" style="position:fixed;bottom:24px;right:24px;display:flex;flex-direction:column;gap:8px;z-index:9999;"></div>
+
+<!-- Bundle JS -->
+<script src="js/bundle.js?v=3"></script>
+
+</body>
+</html>
