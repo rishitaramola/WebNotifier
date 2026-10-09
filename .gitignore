@@ -11,7 +11,6 @@ build/
 scheduler_daemon
 report_generator
 test_scheduler
-cookies.txt
 
 # ── CMake artifacts ───────────────────────────────────────────
 CMakeCache.txt
@@ -22,10 +21,15 @@ install_manifest.txt
 CTestTestfile.cmake
 _deps/
 
+# ── Node dependencies ─────────────────────────────────────────
+node_modules/
+backend/node_modules/
+
 # ── Secrets & Credentials (NEVER commit) ─────────────────────
-configs/.env
+.env
+**/.env
 *.env
-!configs/.env.example    # keep the template
+!**/.env.example         # keep the templates (configs/, backend/)
 
 # ── Generated Reports (runtime output) ───────────────────────
 reports/*.pdf
@@ -55,3 +59,8 @@ tests/output/
 *.gcda
 *.gcno
 coverage/
+cookies.txt
+
+# Backups (may contain secrets)
+*.bak
+*.bak.*
