@@ -6,6 +6,7 @@
 #include "../include/scheduler.h"
 #include "../../worker_pool/include/worker_pool.h"
 
+#include <libpq-fe.h>
 #include <iostream>
 #include <sstream>
 #include <csignal>
@@ -57,6 +58,10 @@ static std::string build_conn_string()
 // ─────────────────────────────────────────────────────────────
 int main()
 {
+    // Flush stdout on every insertion so logs are visible in real time even
+    // when piped to a file (default C++ block-buffering otherwise hides them).
+    std::cout << std::unitbuf;
+
     std::cout
         << "============================================\n"
         << " WebNotifier — Monitoring Daemon\n"
@@ -125,10 +130,39 @@ int main()
     if (strat_env &&
         std::string(strat_env) == "adaptive") {
 
-        std::cout << "[Daemon] Using AdaptiveStrategy.\n";
+        std::cout << "[Daemon] Using AdaptiveStrategy (real failure-rate feed).\n";
+
+        // Dedicated read-only connection for failure-rate lookups. Owned by the
+        // lambda's enclosing scope (static) so it outlives the strategy object.
+        static PGconn* rate_conn = PQconnectdb(db_connection.c_str());
+        if (PQstatus(rate_conn) != CONNECTION_OK) {
+            std::cerr << "[Daemon] WARNING: adaptive rate connection failed: "
+                      << PQerrorMessage(rate_conn)
+                      << " — failure rate will read as 0.\n";
+        }
+
+        // Fraction of non-UP results in the last hour, per website [0.0, 1.0].
+        auto failure_rate_fn = [](int website_id) -> double {
+            if (!rate_conn || PQstatus(rate_conn) != CONNECTION_OK) return 0.0;
+            std::string id = std::to_string(website_id);
+            const char* params[] = { id.c_str() };
+            PGresult* r = PQexecParams(
+                rate_conn,
+                "SELECT COALESCE(AVG(CASE WHEN status <> 'UP' THEN 1.0 ELSE 0.0 END), 0.0) "
+                "FROM monitoring_results "
+                "WHERE website_id = $1::int "
+                "  AND checked_at >= NOW() - INTERVAL '1 hour'",
+                1, nullptr, params, nullptr, nullptr, 0);
+            double rate = 0.0;
+            if (PQresultStatus(r) == PGRES_TUPLES_OK && PQntuples(r) > 0) {
+                rate = std::atof(PQgetvalue(r, 0, 0));
+            }
+            PQclear(r);
+            return rate;
+        };
 
         strategy =
-            std::make_shared<webnotifier::AdaptiveStrategy>();
+            std::make_shared<webnotifier::AdaptiveStrategy>(failure_rate_fn);
 
     } else {
 

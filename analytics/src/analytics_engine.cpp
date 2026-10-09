@@ -90,6 +90,13 @@ AnalyticsEngine::AnalyticsEngine(const std::string& db_conn_string,
       conn_(nullptr),
       reports_dir_(reports_dir) {
 
+    // Normalize reports_dir_ to always end with a path separator, so callers
+    // can safely do `reports_dir_ + "report_user_..."` (otherwise a value like
+    // "/path/reports" produces "/path/reportsreport_user_...").
+    if (!reports_dir_.empty() && reports_dir_.back() != '/') {
+        reports_dir_ += '/';
+    }
+
     // Connect to PostgreSQL
     PGconn* conn = PQconnectdb(db_conn_string_.c_str());
     if (PQstatus(conn) != CONNECTION_OK) {

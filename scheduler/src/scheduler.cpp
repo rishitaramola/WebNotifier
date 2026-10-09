@@ -160,38 +160,93 @@ void Scheduler::run() {
         }
 
         // ── Push tasks outside the lock (queue has its own mutex) ─
-        for (const auto& site : due_sites) {
-            // Insert a monitoring_job row to get an official job_id
-            int job_id = insert_monitoring_job(site.website_id);
-
-            Task task(job_id, site.website_id, site.url,
-                      site.keyword, site.timeout_sec, site.notify_email);
-
-            // ISO8601 scheduled_at timestamp
-            auto tp   = std::chrono::system_clock::now();
-            auto tt   = std::chrono::system_clock::to_time_t(tp);
-            char buf[32];
-            std::strftime(buf, sizeof(buf), "%Y-%m-%dT%H:%M:%SZ",
-                          std::gmtime(&tt));
-            task.scheduled_at = buf;
-
-            queue_.push(task);
-            std::cout << "[Scheduler] Queued job_id=" << job_id
-                      << " url=" << site.url << "\n";
-
-            // OS Concept: Pacing — yield between pushes to
-            // prevent instantaneous queue flood on many sites.
-            std::this_thread::sleep_for(
-                std::chrono::milliseconds(PUSH_PACE_MS));
-        }
+        dispatch_sites(due_sites);
 
         // ── Sleep until next tick ─────────────────────────────
-        // Interruptible loop: check running_ each second so stop()
-        // is responsive without blocking for a full 60-second sleep.
+        // Interruptible loop: check running_ each second so stop() is
+        // responsive. Every FORCE_POLL_SEC seconds, also check whether the
+        // frontend requested an immediate check (via the check_requests table)
+        // and, if so, enqueue all active sites right away without waiting for
+        // the next 60-second tick.
         for (int s = 0; s < TICK_INTERVAL_SEC && running_.load(); ++s) {
             std::this_thread::sleep_for(std::chrono::seconds(1));
+
+            if (s % FORCE_POLL_SEC == 0 && consume_force_check()) {
+                // Reload first so a website added since the last hot-reload is
+                // picked up and checked immediately (no ~10-min wait / restart).
+                reload_websites();
+
+                std::vector<WebsiteConfig> all_active;
+                long long fnow = std::chrono::duration_cast<std::chrono::seconds>(
+                                     std::chrono::system_clock::now().time_since_epoch())
+                                     .count();
+                {
+                    std::lock_guard<std::mutex> lock(mutex_);
+                    for (const auto& site : websites_) {
+                        if (!site.is_active) continue;
+                        all_active.push_back(site);
+                        last_checked_[site.website_id] = fnow;  // reset interval timer
+                    }
+                }
+                std::cout << "[Scheduler] Force-check requested — enqueuing "
+                          << all_active.size() << " active site(s).\n";
+                dispatch_sites(all_active);
+            }
         }
     }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Private: Build a Task per site and push onto the queue, paced.
+// Shared by the tick dispatch and the on-demand force dispatch.
+// ─────────────────────────────────────────────────────────────────────────────
+void Scheduler::dispatch_sites(const std::vector<WebsiteConfig>& sites) {
+    for (const auto& site : sites) {
+        int job_id = insert_monitoring_job(site.website_id);
+
+        Task task(job_id, site.website_id, site.url,
+                  site.keyword, site.timeout_sec, site.notify_email);
+
+        auto tp = std::chrono::system_clock::now();
+        auto tt = std::chrono::system_clock::to_time_t(tp);
+        char buf[32];
+        std::strftime(buf, sizeof(buf), "%Y-%m-%dT%H:%M:%SZ", std::gmtime(&tt));
+        task.scheduled_at = buf;
+
+        queue_.push(task);
+        std::cout << "[Scheduler] Queued job_id=" << job_id
+                  << " url=" << site.url << "\n";
+
+        // OS Concept: Pacing — yield between pushes to avoid queue flood.
+        std::this_thread::sleep_for(std::chrono::milliseconds(PUSH_PACE_MS));
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Private: Atomically claim pending force-check requests.
+// One UPDATE..RETURNING flips all un-processed rows and tells us if any existed,
+// so concurrent ticks can't double-dispatch the same request.
+// ─────────────────────────────────────────────────────────────────────────────
+bool Scheduler::consume_force_check() {
+    if (!pg_conn_ ||
+        PQstatus(static_cast<PGconn*>(pg_conn_)) != CONNECTION_OK) {
+        return false;
+    }
+
+    PGresult* res = PQexec(
+        static_cast<PGconn*>(pg_conn_),
+        "UPDATE check_requests SET processed = TRUE "
+        "WHERE processed = FALSE RETURNING id");
+
+    if (PQresultStatus(res) != PGRES_TUPLES_OK) {
+        // Table may not exist yet, or a transient error — treat as "no request".
+        PQclear(res);
+        return false;
+    }
+
+    bool any = PQntuples(res) > 0;
+    PQclear(res);
+    return any;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

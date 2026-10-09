@@ -3,6 +3,40 @@ const router = express.Router();
 
 const { pool } = require("../db");
 const requireAuth = require("../middleware/auth");
+const { normalizeUrl } = require("../utils/urlValidator");
+
+// POST /api/websites/check-now
+// Signals the C++ scheduler to immediately enqueue all active sites.
+// Debounced: ignores a request if one was made in the last CHECK_NOW_DEBOUNCE_SEC
+// seconds, so rapid dashboard refreshes don't flood the queue / monitored sites.
+const CHECK_NOW_DEBOUNCE_SEC = parseInt(process.env.CHECK_NOW_DEBOUNCE_SEC || "30", 10);
+router.post("/check-now", requireAuth, async (req, res) => {
+    try {
+        // `force` (sent right after adding a website) bypasses the debounce so a
+        // brand-new site is always checked immediately.
+        const force = req.body && req.body.force === true;
+        if (!force) {
+            const recent = await pool.query(
+                `SELECT 1 FROM check_requests
+                 WHERE requested_at >= NOW() - ($1 || ' seconds')::interval
+                 LIMIT 1`,
+                [String(CHECK_NOW_DEBOUNCE_SEC)]
+            );
+            if (recent.rows.length > 0) {
+                return res.json({ queued: false, debounced: true,
+                    message: `A check was already requested in the last ${CHECK_NOW_DEBOUNCE_SEC}s` });
+            }
+        }
+        await pool.query(
+            "INSERT INTO check_requests (requested_by) VALUES ($1)",
+            [req.session.userId]
+        );
+        res.json({ queued: true, message: "Immediate check requested" });
+    } catch (error) {
+        console.error("[Websites] check-now error:", error.message);
+        res.status(500).json({ error: "Failed to request check" });
+    }
+});
 
 // GET /api/websites
 router.get("/", requireAuth, async (req, res) => {
@@ -45,6 +79,15 @@ router.post("/", requireAuth, async (req, res) => {
             });
         }
 
+        // Normalize + validate the URL authoritatively (fixes "https:hotstar.com",
+        // bare domains, etc.; rejects non-http(s) junk).
+        const cleanUrl = normalizeUrl(url);
+        if (!cleanUrl) {
+            return res.status(400).json({
+                error: "Please enter a valid website URL (e.g. https://example.com)"
+            });
+        }
+
         const result = await pool.query(
             `
             INSERT INTO websites
@@ -63,7 +106,7 @@ router.post("/", requireAuth, async (req, res) => {
             `,
             [
                 req.session.userId,
-                url,
+                cleanUrl,
                 name,
                 parseInt(check_interval_min) || 5,
                 keyword || null,

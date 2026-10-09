@@ -51,7 +51,7 @@ target_link_libraries(webnotifier_worker_pool PUBLIC
 )
 
 add_executable(test_worker_pool
-    worker_pool/test_worker_pool.cpp
+    tests/worker_pool/test_worker_pool.cpp
 )
 target_include_directories(test_worker_pool PRIVATE
     worker_pool/include
