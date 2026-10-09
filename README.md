@@ -29,6 +29,27 @@ weekly analytical reports.
 
 ---
 
+## Recent Additions
+
+- **Email alerts dispatch** — a background poller emails website owners when a
+  site goes DOWN / TIMEOUT / keyword-missing (safe log-mode by default; set
+  `ALERTS_EMAIL_ENABLED=true`).
+- **Reports** — list, generate and download weekly CSV reports from the
+  dashboard (`/api/reports`).
+- **On-demand checks** — opening the dashboard (or adding a site) triggers an
+  immediate re-check via `/api/websites/check-now`; the scheduler reloads and
+  enqueues on request, so new sites are checked in seconds.
+- **Persistent sessions** — sessions are stored in PostgreSQL
+  (`connect-pg-simple`), so a backend restart no longer logs users out.
+- **URL validation** — website URLs are normalized and validated (frontend +
+  backend) to prevent malformed entries.
+- **Convenience scripts** — `scripts/start_all.sh` / `scripts/stop_all.sh`
+  start and stop all services together.
+
+> **Setup & run:** see **[RUN.md](RUN.md)** for the full, step-by-step guide.
+
+---
+
 ## Team Members
 
 | Member           | Role       | Module Ownership                   |
