@@ -303,6 +303,9 @@
         <div class="nav-item" data-page="analytics">
             <span class="nav-icon">📊</span> Analytics
         </div>
+        <div class="nav-item" data-page="reports">
+            <span class="nav-icon">📄</span> Reports
+        </div>
         <div class="nav-item" data-page="system">
             <span class="nav-icon">🖥</span> System Health
         </div>
@@ -492,6 +495,21 @@
         </section>
 
 
+        <!-- ══ PAGE: Reports ═════════════════════════════════════ -->
+        <section id="page-reports" class="page">
+            <div class="page-header">
+                <div>
+                    <div class="page-title">Weekly Reports</div>
+                    <div class="page-subtitle">Uptime summaries — download as CSV</div>
+                </div>
+                <button class="btn btn-primary" id="btn-generate-report">⚙ Generate Report</button>
+            </div>
+            <div class="chart-box">
+                <div id="reports-table"></div>
+            </div>
+        </section>
+
+
         <!-- ══ PAGE: System Health ═══════════════════════════════ -->
         <section id="page-system" class="page">
             <div class="page-header">
@@ -648,6 +666,10 @@
 
         <form id="form-change-password">
             <div class="form-group">
+                <label class="form-label" for="cp-current">Current Password</label>
+                <input class="form-input" id="cp-current" type="password" placeholder="Enter current password" required />
+            </div>
+            <div class="form-group">
                 <label class="form-label" for="cp-new">New Password</label>
                 <input class="form-input" id="cp-new" type="password" placeholder="Enter new password (min 6 chars)" required />
             </div>
@@ -767,7 +789,7 @@
 <div id="toast-container" style="position:fixed;bottom:24px;right:24px;display:flex;flex-direction:column;gap:8px;z-index:9999;"></div>
 
 <!-- Bundle JS -->
-<script src="js/bundle.js?v=3"></script>
+<script src="js/bundle.js?v=9"></script>
 
 </body>
 </html>

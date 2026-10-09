@@ -5,7 +5,10 @@
 // ============================================================
 
 // CONFIG
-const API_BASE  = 'http://localhost:8080/api';
+// Use the SAME hostname the page was opened with (localhost vs 127.0.0.1), so
+// the API is same-site and the session cookie is actually sent. A hardcoded
+// 'localhost' here breaks sessions when the page is opened via 127.0.0.1.
+const API_BASE  = 'http://' + (location.hostname || 'localhost') + ':8080/api';
 const DEMO_MODE = false;
 
 // MOCK DATA
@@ -83,6 +86,23 @@ async function apiGetUptimeStats()   { return DEMO_MODE ? MOCK_UPTIME           
 async function apiGetSystemHealth()  { return DEMO_MODE ? MOCK_SYSTEM_HEALTH    : await http('GET','/system-metrics'); }
 async function apiGetSystemHistory() { return DEMO_MODE ? generateMockHistory() : await http('GET','/system-metrics/history'); }
 async function apiGetSSLWarnings()   { return DEMO_MODE ? MOCK_SSL_WARNINGS     : await http('GET','/websites/ssl-warnings'); }
+async function apiCheckNow(force)    { return DEMO_MODE ? {queued:false}        : await http('POST','/websites/check-now', force ? {force:true} : null); }
+async function apiGetReports()       { return DEMO_MODE ? []                    : await http('GET','/reports'); }
+async function apiGenerateReport()   { return DEMO_MODE ? {message:'ok'}        : await http('POST','/reports/generate'); }
+
+// Download a report CSV via fetch (keeps the session cookie) and save it.
+async function downloadReport(id, filename) {
+    try {
+        var res = await fetch(API_BASE + '/reports/' + id + '/download', { credentials: 'include' });
+        if (!res.ok) { showToast('Download failed', 'error'); return; }
+        var blob = await res.blob();
+        var url  = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url; a.download = filename || ('report_' + id + '.csv');
+        document.body.appendChild(a); a.click(); a.remove();
+        URL.revokeObjectURL(url);
+    } catch (e) { showToast('Download error: ' + e.message, 'error'); }
+}
 
 async function apiLogin(username, password) {
     if (DEMO_MODE) return { id:1, username, role:'user' };
@@ -114,13 +134,14 @@ async function apiDeleteWebsite(id) {
     return http('DELETE', '/websites/' + id);
 }
 
-async function apiChangePassword(newPassword, confirmPassword) {
+async function apiChangePassword(currentPassword, newPassword, confirmPassword) {
     if (DEMO_MODE) {
+        if (currentPassword !== '1234') throw new Error('Current password is incorrect (demo: use 1234)');
         if (newPassword !== confirmPassword) throw new Error('New passwords do not match');
         if (newPassword.length < 6) throw new Error('New password must be at least 6 characters');
         return { message: 'Password updated successfully' };
     }
-    return http('POST', '/users/change-password', { newPassword, confirmPassword });
+    return http('POST', '/users/change-password', { currentPassword, newPassword, confirmPassword });
 }
 
 // APP STATE
@@ -203,6 +224,24 @@ function renderGauge(elementId, pct, status) {
 // HELPERS
 function setEl(id, val) { const e=document.getElementById(id); if(e) e.textContent=val; }
 function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// Normalize a website URL (fixes "https:hotstar.com", bare domains, etc.).
+// Returns a clean http(s) URL string, or null if it cannot be made valid.
+function normalizeUrl(raw) {
+    var s = String(raw || '').trim();
+    if (!s) return null;
+    var scheme = 'https';
+    var m = s.match(/^(https?):[/]*/i);
+    if (m) { scheme = m[1].toLowerCase(); s = s.slice(m[0].length); }
+    s = s.replace(/^[/]+/, '');
+    if (!s) return null;
+    var u;
+    try { u = new URL(scheme + '://' + s); } catch (e) { return null; }
+    if (!u.hostname || (u.hostname.indexOf('.') === -1 && u.hostname !== 'localhost')) return null;
+    var out = u.href;
+    if (u.pathname === '/' && !u.search && !u.hash) out = u.origin;
+    return out;
+}
 function timeAgo(iso) {
     if (!iso) return 'never';
     const d = Math.floor((Date.now()-new Date(iso))/1000);
@@ -430,7 +469,46 @@ function navigateTo(pageId) {
     if (pageId==='websites')  renderWebsiteCards(state.websites, 'all-website-cards');
     if (pageId==='alerts')    renderAlertsTable(state.alerts, 'alerts-full-table');
     if (pageId==='analytics') renderAnalyticsPage();
+    if (pageId==='reports')   renderReports();
     if (pageId==='system')    renderSystemPage();
+}
+
+async function renderReports() {
+    var el = document.getElementById('reports-table');
+    if (!el) return;
+    el.innerHTML = '<p style="color:var(--text-muted);padding:12px;">Loading…</p>';
+    try {
+        var reports = await apiGetReports();
+        if (!reports || reports.length === 0) {
+            el.innerHTML = '<p style="color:var(--text-muted);padding:16px;">No reports yet. Click “Generate Report” to create one.</p>';
+            return;
+        }
+        var rows = reports.map(function(r){
+            var period = (r.week_start||'').slice(0,10) + ' → ' + (r.week_end||'').slice(0,10);
+            var uptime = (r.uptime_pct==null?'—':r.uptime_pct + '%');
+            var when   = (r.generated_at||'').replace('T',' ').slice(0,16);
+            var fname  = r.report_path ? r.report_path.split('/').pop() : ('report_'+r.id+'.csv');
+            var dl = r.downloadable
+                ? '<button class="btn btn-secondary" onclick="downloadReport(' + r.id + ',\'' + escHtml(fname) + '\')">⬇ CSV</button>'
+                : '<span style="color:var(--text-muted);font-size:0.8rem;">file missing</span>';
+            return '<tr>' +
+                '<td>' + escHtml(period) + '</td>' +
+                '<td>' + uptime + '</td>' +
+                '<td>' + (r.total_checks==null?'—':r.total_checks) + '</td>' +
+                '<td>' + (r.total_alerts==null?'—':r.total_alerts) + '</td>' +
+                '<td>' + (r.avg_response_ms==null?'—':r.avg_response_ms+' ms') + '</td>' +
+                '<td>' + escHtml(when) + '</td>' +
+                '<td>' + dl + '</td>' +
+                '</tr>';
+        }).join('');
+        el.innerHTML =
+            '<table class="data-table" style="width:100%;">' +
+            '<thead><tr><th>Period</th><th>Uptime</th><th>Checks</th><th>Alerts</th><th>Avg Response</th><th>Generated</th><th></th></tr></thead>' +
+            '<tbody>' + rows + '</tbody></table>';
+    } catch(e) {
+        if (e.code === 'UNAUTH') { handleSessionExpired(); return; }
+        el.innerHTML = '<p style="color:var(--danger);padding:16px;">Failed to load reports: ' + escHtml(e.message) + '</p>';
+    }
 }
 
 function renderOverview() {
@@ -481,19 +559,8 @@ function handleSessionExpired() {
 
 function startAutoRefresh() {
     if (state.refreshInterval) clearInterval(state.refreshInterval);
-    state.refreshInterval = setInterval(async function(){
-        try {
-            var r = await Promise.all([apiGetWebsites(), apiGetAlerts(), apiGetSummary(), apiGetSystemHealth()]);
-            state.websites=r[0]; state.alerts=r[1]; state.summary=r[2]; state.systemHealth=r[3];
-            var active = document.querySelector('.page.active');
-            if (active) {
-                var id = active.id.replace('page-','');
-                if (id==='overview') renderOverview();
-                if (id==='websites') renderWebsiteCards(state.websites, 'all-website-cards');
-                if (id==='system')   renderSystemPage();
-            }
-        } catch(e) { if (e.code === 'UNAUTH') handleSessionExpired(); }
-    }, 30000);
+    // Keep the dashboard live on its own — refresh every 15s.
+    state.refreshInterval = setInterval(refreshActivePage, 15000);
 }
 
 // DELETE
@@ -548,6 +615,40 @@ function showDashboard() {
     setEl('topbar-username', state.user && state.user.username ? state.user.username : 'User');
     loadAllData();
     startAutoRefresh();
+    requestImmediateCheck();
+}
+
+// Ask the scheduler to check all sites now (debounced server-side). After a
+// short delay, refresh the dashboard so the fresh results show up without
+// waiting for the 30s auto-refresh.
+async function requestImmediateCheck(force) {
+    if (!state.user) return;   // don't run when logged out
+    try {
+        var r = await apiCheckNow(force);
+        if (r && r.queued) {
+            showToast('Checking your websites now…', 'info');
+            // Refresh a few times after the request so the new result appears
+            // without the user touching anything.
+            [5000, 9000, 14000].forEach(function(ms){
+                setTimeout(refreshActivePage, ms);
+            });
+        }
+    } catch(e) { /* non-fatal — dashboard still works without an immediate check */ }
+}
+
+// Re-fetch everything and re-render whichever page is currently visible.
+async function refreshActivePage() {
+    if (!state.user) return;   // skip if logged out (prevents repeated "session expired")
+    try {
+        var d = await Promise.all([apiGetWebsites(), apiGetAlerts(), apiGetSummary(), apiGetSystemHealth()]);
+        state.websites=d[0]; state.alerts=d[1]; state.summary=d[2]; state.systemHealth=d[3];
+        var active = document.querySelector('.page.active');
+        if (!active) return;
+        var id = active.id.replace('page-','');
+        if (id==='overview') renderOverview();
+        if (id==='websites') renderWebsiteCards(state.websites, 'all-website-cards');
+        if (id==='system')   renderSystemPage();
+    } catch(e) { if (e.code === 'UNAUTH') handleSessionExpired(); }
 }
 
 // INIT
@@ -697,6 +798,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (changePwForm) {
         changePwForm.addEventListener('submit', async function(e) {
             e.preventDefault();
+            var current = document.getElementById('cp-current').value;
             var newPw   = document.getElementById('cp-new').value;
             var confirm = document.getElementById('cp-confirm').value;
             var errEl   = document.getElementById('change-pw-error');
@@ -705,7 +807,7 @@ document.addEventListener('DOMContentLoaded', function() {
             errEl.style.display='none'; succEl.style.display='none';
             btn.disabled=true; btn.textContent='Updating…';
             try {
-                await apiChangePassword(newPw, confirm);
+                await apiChangePassword(current, newPw, confirm);
                 succEl.textContent = '✅ Password updated successfully!';
                 succEl.style.display = 'block';
                 changePwForm.style.display = 'none';
@@ -732,12 +834,36 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // ── Generate Report button ────────────────────────────────
+    var genBtn = document.getElementById('btn-generate-report');
+    if (genBtn) {
+        genBtn.addEventListener('click', async function() {
+            genBtn.disabled = true; genBtn.textContent = 'Generating…';
+            try {
+                await apiGenerateReport();
+                showToast('Reports generated', 'success');
+                await renderReports();
+            } catch(e) {
+                showToast('Generate failed: ' + e.message, 'error');
+            } finally {
+                genBtn.disabled = false; genBtn.textContent = '⚙ Generate Report';
+            }
+        });
+    }
+
     // ── Add Website form ──────────────────────────────────────
     var addForm = document.getElementById('form-add-website');
     if (addForm) {
         addForm.addEventListener('submit', async function(e) {
             e.preventDefault();
             var data = Object.fromEntries(new FormData(addForm));
+            // Validate + clean the URL before sending (matches backend rules).
+            var clean = normalizeUrl(data.url);
+            if (!clean) {
+                showToast('Please enter a valid website URL (e.g. https://example.com)', 'error');
+                return;
+            }
+            data.url = clean;
             var btn  = addForm.querySelector('[type="submit"]');
             btn.disabled=true; btn.textContent='Adding…';
             try {
@@ -747,6 +873,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 addForm.reset();
                 navigateTo('websites');
                 showToast('"' + data.name + '" added', 'success');
+                // Check the brand-new site right now (force = bypass debounce),
+                // and auto-refresh so its status appears on its own.
+                requestImmediateCheck(true);
             } catch(e) { showToast('Error: ' + e.message, 'error'); }
             finally { btn.disabled=false; btn.textContent='Add Website'; }
         });

@@ -117,6 +117,19 @@ private:
      */
     int insert_monitoring_job(int website_id);
 
+    /**
+     * @brief Build a Task for a site and push it onto the queue (with pacing).
+     * Shared by the normal tick dispatch and the on-demand force dispatch.
+     */
+    void dispatch_sites(const std::vector<WebsiteConfig>& sites);
+
+    /**
+     * @brief Consume any pending rows in `check_requests` (set processed=TRUE).
+     * @return true if at least one un-processed request existed (i.e. the
+     *         frontend asked for an immediate check).
+     */
+    bool consume_force_check();
+
     // ── Data members ─────────────────────────────────────────
     TaskQueue&                              queue_;
     std::shared_ptr<SchedulingStrategy>     strategy_;
@@ -134,6 +147,7 @@ private:
 
     // ── Timing constants ─────────────────────────────────────
     static constexpr int TICK_INTERVAL_SEC = 60;   ///< Main loop cadence
+    static constexpr int FORCE_POLL_SEC    = 3;    ///< How often to poll check_requests
     static constexpr int MAX_BACKOFF_SEC   = 64;   ///< Cap for retry backoff
     static constexpr int MAX_DB_RETRIES    = 6;    ///< Retries before giving up per cycle
 

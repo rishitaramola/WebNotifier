@@ -5,16 +5,19 @@ const cors = require("cors");
 const session = require("express-session");
 require("dotenv").config();
 
-const { testConnection } = require("./db");
+const { testConnection, pool } = require("./db");
+const pgSession = require("connect-pg-simple")(session);
+const { startAlertEmailer } = require("./jobs/alertEmailer");
 const websitesRouter = require("./routes/websites");
 const authRouter = require("./routes/auth");
 const analyticsRouter = require("./routes/analytics");
+const reportsRouter = require("./routes/reports");
 
 const app = express();
 
 app.use(
     cors({
-        origin: "http://localhost:5500",
+        origin: ['http://localhost:5500', 'http://127.0.0.1:5500', 'http://localhost:3000'],
         credentials: true
     })
 );
@@ -23,6 +26,13 @@ app.use(express.json());
 
 app.use(
     session({
+        // Persist sessions in PostgreSQL so a backend restart / reboot no longer
+        // logs everyone out (the default MemoryStore lives in RAM and is wiped).
+        store: new pgSession({
+            pool: pool,
+            tableName: "session",
+            createTableIfMissing: true,
+        }),
         secret: process.env.SESSION_SECRET,
         resave: false,
         saveUninitialized: false,
@@ -36,6 +46,7 @@ app.use(
 app.use("/api/users", authRouter);
 app.use("/api/websites", websitesRouter);
 app.use("/api/analytics", analyticsRouter);
+app.use("/api/reports", reportsRouter);
 app.use("/api/alerts", alertsRouter);
 app.use("/api/system-metrics", systemMetricsRouter);
 
@@ -58,6 +69,7 @@ async function startServer() {
 
     app.listen(PORT, () => {
         console.log(`[Server] WebNotifier API running on port ${PORT}`);
+        startAlertEmailer();
     });
 }
 

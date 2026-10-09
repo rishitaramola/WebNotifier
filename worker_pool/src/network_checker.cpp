@@ -12,6 +12,7 @@
 #include <sstream>
 #include <string>
 #include <iomanip>
+#include <ctime>
 namespace webnotifier {
 
 namespace {
@@ -83,6 +84,9 @@ MonitoringResult NetworkChecker::check(const Task& task)
     // Do not print anything to stdout/stderr.
     curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);
 
+    // Collect TLS certificate details so we can derive SSL expiry below.
+    curl_easy_setopt(curl, CURLOPT_CERTINFO, 1L);
+
     const auto start_time = std::chrono::steady_clock::now();
 
     const CURLcode curl_result = curl_easy_perform(curl);
@@ -114,6 +118,38 @@ MonitoringResult NetworkChecker::check(const Task& task)
                 response_body.find(task.keyword) != std::string::npos;
         } else {
             result.keyword_found = true;
+        }
+
+        // --- SSL certificate expiry (HTTPS targets only) ---
+        if (task.url.rfind("https://", 0) == 0) {
+            struct curl_certinfo* certinfo = nullptr;
+            if (curl_easy_getinfo(curl, CURLINFO_CERTINFO, &certinfo) == CURLE_OK
+                && certinfo != nullptr && certinfo->num_of_certs > 0) {
+
+                // certinfo[0] is the leaf (server) certificate.
+                for (struct curl_slist* entry = certinfo->certinfo[0];
+                     entry != nullptr; entry = entry->next) {
+
+                    const std::string field = entry->data;
+                    const std::string key = "Expire date:";
+
+                    if (field.rfind(key, 0) == 0) {
+                        const std::string date_str = field.substr(key.size());
+
+                        std::tm expiry_tm{};
+                        // OpenSSL emits e.g. "Jun 10 23:59:59 2025 GMT".
+                        if (strptime(date_str.c_str(),
+                                     "%b %d %H:%M:%S %Y", &expiry_tm) != nullptr) {
+                            const std::time_t expiry = timegm(&expiry_tm);
+                            const double seconds_left =
+                                std::difftime(expiry, now_time);
+                            result.ssl_expiry_days =
+                                static_cast<int>(seconds_left / 86400.0);
+                        }
+                        break;
+                    }
+                }
+            }
         }
 
     } else if (curl_result == CURLE_OPERATION_TIMEDOUT) {

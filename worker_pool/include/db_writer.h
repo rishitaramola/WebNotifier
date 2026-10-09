@@ -69,6 +69,19 @@ public:
 
 private:
 
+    /**
+     * @brief Generate alert rows for a just-stored result.
+     *
+     * Called by write_result while the mutex is held. Emits DOWN,
+     * TIMEOUT, KEYWORD_MISSING and SSL_EXPIRY alerts, and suppresses
+     * duplicate DOWN/TIMEOUT alerts while a site stays in the same
+     * failing state (alerts fire on state transitions only).
+     *
+     * @param result    The result that was stored.
+     * @param result_id The SERIAL id of the stored monitoring_results row.
+     */
+    void create_alerts(const MonitoringResult& result, int result_id);
+
     std::string connection_string_;
 
     PGconn* connection_;
