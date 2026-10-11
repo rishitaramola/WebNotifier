@@ -55,7 +55,7 @@ weekly analytical reports.
 | Member           | Role       | Module Ownership                   |
 |------------------|------------|------------------------------------|
 | Rishita Ramola   | Team Lead  | Task Scheduler, Analytics Engine   |
-| Shivank Garg     | Backend    | Thread-Safe Queue, Worker Pool     |
+| Shivank Garg     | Backend    | Thread-Safe Queue, Worker Pool, HTTP Network Checker |
 | Divyansh Sood    | Backend    | Backend API Layer, Alert Dispatcher|
 | Simran Negi      | Frontend   | Web Dashboard (HTML/CSS/JS)        |
 
