@@ -213,8 +213,8 @@ router.post("/change-password", async (req, res) => {
         if (!req.session.userId) {
             return res.status(401).json({ error: "Not logged in" });
         }
-        const { newPassword, confirmPassword } = req.body;
-        if (!newPassword || !confirmPassword) {
+        const { currentPassword, newPassword, confirmPassword } = req.body;
+        if (!currentPassword || !newPassword || !confirmPassword) {
             return res.status(400).json({ error: "All fields are required" });
         }
         if (newPassword !== confirmPassword) {
@@ -222,6 +222,19 @@ router.post("/change-password", async (req, res) => {
         }
         if (newPassword.length < 6) {
             return res.status(400).json({ error: "New password must be at least 6 characters" });
+        }
+        // Verify the current password before allowing a change, so a hijacked
+        // session alone can't reset the password without knowing the old one.
+        const current = await pool.query(
+            `SELECT password_hash FROM users WHERE id = $1`,
+            [req.session.userId]
+        );
+        if (current.rows.length === 0) {
+            return res.status(404).json({ error: "User not found" });
+        }
+        const matches = await bcrypt.compare(currentPassword, current.rows[0].password_hash);
+        if (!matches) {
+            return res.status(401).json({ error: "Current password is incorrect" });
         }
         const newHash = await bcrypt.hash(newPassword, 10);
         await pool.query(
