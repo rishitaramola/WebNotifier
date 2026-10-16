@@ -23,9 +23,14 @@ struct MonitoringResult {
     std::string error_message;   // human-readable error, if any
     std::string timestamp;       // ISO8601 timestamp of the check
 
+    // keyword_found defaults to true ("no keyword failure"). A missing
+    // keyword is only meaningful when the site is actually UP and the
+    // configured keyword is genuinely absent from the body; every other
+    // outcome (no keyword configured, TIMEOUT, ERROR, HTTP error page) must
+    // leave this true so it is never mistaken for a KEYWORD_MISSING alert.
     MonitoringResult()
         : website_id(0), job_id(0), http_code(0),
-          response_time_ms(0), keyword_found(false),
+          response_time_ms(0), keyword_found(true),
           ssl_expiry_days(-1) {}
 };
 

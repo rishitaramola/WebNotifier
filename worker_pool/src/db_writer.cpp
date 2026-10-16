@@ -233,7 +233,18 @@ void DatabaseWriter::create_alerts(const MonitoringResult& result, int result_id
     }
 
     // --- KEYWORD_MISSING: a keyword was expected but not found ---
-    // (keyword_found defaults to true when no keyword is configured.)
+    // (keyword_found is true when no keyword is configured or the site is not
+    // UP, so this only triggers on a genuine missing keyword for a live site.)
+    //
+    // Fire only on state transition, exactly like DOWN/TIMEOUT above: suppress
+    // a new alert if the immediately previous result for this website already
+    // had keyword_found = FALSE. Without this, a persistently missing keyword
+    // would email a fresh alert on every single check.
+    //
+    // (SELECT ...) IS DISTINCT FROM FALSE is TRUE when the previous result had
+    // the keyword (TRUE) or there is no previous result (NULL), and FALSE only
+    // when it was already missing — so the first occurrence alerts and repeats
+    // are suppressed.
     if (!result.keyword_found) {
         const std::string message = "Expected keyword not found in response";
         const char* vals[3] = {
@@ -243,7 +254,12 @@ void DatabaseWriter::create_alerts(const MonitoringResult& result, int result_id
         };
         const char* sql =
             "INSERT INTO alerts (website_id, result_id, alert_type, message) "
-            "VALUES ($1, $2, 'KEYWORD_MISSING', $3);";
+            "SELECT $1, $2, 'KEYWORD_MISSING', $3 "
+            "WHERE ("
+            "  SELECT mr.keyword_found FROM monitoring_results mr "
+            "  WHERE mr.website_id = $1 AND mr.id <> $2 "
+            "  ORDER BY mr.id DESC LIMIT 1"
+            ") IS DISTINCT FROM FALSE;";
         exec(sql, 3, vals);
     }
 
