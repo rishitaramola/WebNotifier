@@ -113,7 +113,13 @@ MonitoringResult NetworkChecker::check(const Task& task)
         }
 
         // Check optional keyword.
-        if (!task.keyword.empty()) {
+        //
+        // Only meaningful when the site is UP: for a DOWN response (4xx/5xx)
+        // the real problem is the HTTP status, and an error page naturally
+        // won't contain the keyword. Treating that as KEYWORD_MISSING would
+        // raise a second, misleading alert for the same underlying failure,
+        // so we only flag a missing keyword on a genuine 2xx/3xx response.
+        if (result.status == "UP" && !task.keyword.empty()) {
             result.keyword_found =
                 response_body.find(task.keyword) != std::string::npos;
         } else {
